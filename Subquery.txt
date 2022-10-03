@@ -1,0 +1,251 @@
+CREATE TABLE employee (emp_id INTEGER PRIMARY KEY, emp_name VARCHAR (255), dept_name VARCHAR(255), salary INTEGER);
+
+INSERT INTO employee VALUES (101, 'Mohan', 'Admin', 4000);
+INSERT INTO employee VALUES (102, 'Rajkumar', 'HR', 3000);
+INSERT INTO employee VALUES (103, 'Akbar', 'IT', 4000);
+INSERT INTO employee VALUES (104, 'Darvin', 'Finance', 6500);
+INSERT INTO employee VALUES (105, 'Rohit', 'HR', 3000);
+INSERT INTO employee VALUES (106, 'Rajesh', 'Finance', 5000);
+INSERT INTO employee VALUES (107, 'Manish', 'Admin', 4000);
+INSERT INTO employee VALUES (108, 'Raj', 'IT', 4000);
+INSERT INTO employee VALUES (109, 'Ankit', 'IT', 4000);
+INSERT INTO employee VALUES (110, 'Daryav', 'IT', 6700);
+INSERT INTO employee VALUES (111, 'Rohan', 'HR', 3300);
+INSERT INTO employee VALUES (112, 'Ram', 'Finance', 5500);
+INSERT INTO employee VALUES (113, 'Daryav', 'Admin', 6900);
+INSERT INTO employee VALUES (114, 'Rohan', 'Finance', 3100);
+---------------------------------------------------------------------------------------------------------------------------
+CREATE TABLE department (dept_id INTEGER, dept_name TEXT PRIMARY KEY, location VARCHAR(255));
+INSERT INTO department VALUES (1, 'Admin', 'Banglore');
+INSERT INTO department VALUES (2, 'HR' , 'Banglore');
+INSERT INTO department VALUES (3, 'IT', 'Mumbai');
+INSERT INTO department VALUES (4, 'Finance' , 'Banglore');
+INSERT INTO department VALUES (5, 'Marketing', 'Banglore');
+INSERT INTO department VALUES (6, 'Sales' , 'Mumbai');
+-----------------------------------------------------------------------------------------------------------------------------
+
+CREATE TABLE offices (dept_name VARCHAR(255), max_sal INTEGER);
+INSERT INTO offices VALUES ('Finance',6500);
+INSERT INTO offices VALUES ('Admin',5000);
+INSERT INTO offices VALUES ('IT',11000);
+INSERT INTO offices VALUES ('HR',8000);
+-------------------------------------------------------------------------------------------------------------------------------
+
+CREATE TABLE sales (store_id INTEGER, store_name VARCHAR(255), product_name VARCHAR(255), quantity_sold INTEGER,price INTEGER);
+
+INSERT INTO sales VALUES (1,'LG Store 1', 'LG Wing', 1, 1000);
+INSERT INTO sales VALUES (1,'LG Store 1', 'LG Velvet', 3, 600);
+INSERT INTO sales VALUES (2,'LG Store 2', 'LG Stylus', 2, 400);
+INSERT INTO sales VALUES (2,'LG Store 2', 'LG V10', 2, 800);
+INSERT INTO sales VALUES (1,'LG Store 1', 'LG V8', 4, 700);
+INSERT INTO sales VALUES (3,'LG Store 3', 'LG G8X', 2, 1200);
+INSERT INTO sales VALUES (1,'LG Store 1', 'LG V6', 3, 1000);
+INSERT INTO sales VALUES (5,'LG Store 5', 'LG Rollable', 1, 10000);
+INSERT INTO sales VALUES (4,'LG Store 4', 'LG Note', 2, 11000);
+INSERT INTO sales VALUES (3,'LG Store 3', 'LG G3', 5, 400);
+INSERT INTO sales VALUES (5,'LG Store 5', 'LG G4', 5, 450);
+INSERT INTO sales VALUES (4,'LG Store 4', 'LG V2', 1, 150);
+INSERT INTO sales VALUES (6,'LG Store 6', 'LG Optimus', 8, 1650);
+----------------------------------------------------------------------------------------------------------------------------------
+
+CREATE TABLE employee_history (emp_id INTEGER PRIMARY KEY, emp_name VARCHAR (255), dept_name VARCHAR (255), salary INT, location VARCHAR);
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+-- Question: Find the employees who's salary is more than the average salary earned by all employee
+-- from above statement our first task would be finding the average of salary 
+--1. Finding average of salary column
+--2. finding employees who has greater than average salary
+
+-- SELECT AVG(salary) FROM employee; -- 
+-- avg 4416.6666666666666667
+--SELECT * FROM employee WHERE salary > 4416.6666666666666667;
+-- but above is limited and it's not dynamic and hence we want dynamic one that's why we gonna use subquery as follows:
+
+--SELECT * FROM employee --main query/ outer query
+--WHERE salary > (SELECT AVG(salary) FROM employee);  -- this is called subquery/ inner query
+
+-- Now we have different types of subquery
+-- 1. Scalar Subquery 2. Multiple Subquery 3. Correlated Subquery
+
+--1. Scalar Subquery: This query always return one row and one column for example is SELECT AVG(salary) FROM employee will always return one row and one column
+-- now you might be thinking that scalar subquery can only be used after WHERE clause, this isn't true we can obtain same result by different approach
+
+--SELECT e.* FROM employee e 
+--JOIN (SELECT AVG(salary) AS sal FROM employee) AS avg_sal
+--	ON e.salary > avg_sal.sal;
+
+-- 2. Multiple row subquery: It has two types,
+--  i. Multiple column and Multiple rows from sub query
+-- ii. It return one column and multiple rows
+-- Question: Find the employees who earns the highest salary in each department.
+-- First we want highest salary earner by department
+-- Second we want such employee belonging to that department
+
+--SELECT dept_name, max(salary) FROM employee
+--GROUP BY dept_name;
+--Then
+
+SELECT * 
+FROM employee
+WHERE (dept_name, salary) in (SELECT dept_name, max(salary) 
+                               FROM employee
+			       GROUP BY dept_name); -- inner query is independent query where as outer query is dependent on inner query. Note that here we used IN clause so that it will return not just one row but multiple row hence we did not used = operator.
+
+
+-- Now let's talk about single column and multiple row subquery
+-- Question: Find the department who don't have any employees
+
+-- In order to obtain this we will find the department which do present
+
+--SELECT DISTINCT dept_name FROM employee;
+
+--SELECT * FROM department
+--WHERE dept_name NOT IN (SELECT DISTINCT dept_name FROM employee);
+
+--Now let's move towards Correlated Subquery:
+-- A subquery which is related to the outer query is called Correlated Subquery
+--Question: Find the employees in each department who earn more than the average salary in that department.
+--now we wanna find out such employee from each department who has more than average salary from that department.
+-- 1. we find the average salary from each department
+--SELECT AVG(salary) FROM employee WHERE salary > dept_name = 'some specific salary'
+
+--SELECT  * FROM employee e1
+--WHERE salary > (SELECT AVG(salary) FROM employee e2
+--            WHERE e2.dept_name = e1.dept_name);
+-- Here in outer query has 24 records so from inner query it will select one row and make a connection with 24 outer query records and then give relatable record from it and this process goes for 24 inner records. As you can see there is e1.dept_name and due to which the inner query is also depends on outer query. Hence, this the example of Correlated Subquery
+
+--Question: Find department who do not have any employees
+-- as eventually we want from department hence we will select department table here and then we will filter it out using NOT EXISTS keyword
+--SELECT * FROM department d
+--WHERE NOT EXISTS(SELECT * FROM employee e
+--                WHERE e.dept_name = d.dept_name);
+
+--SELECT * FROM employee e
+--                WHERE e.dept_name = 'Admin';
+                
+-- let us focus on inner query so if we hit query WHERE e.dept_name = 'Admin' then it will return all the information from employee table which has records of only Admin department. Next we have put EXISTS clause because of which we can put any constant instead of * in inner query and using NOT EXISTS we are basically excluding that records which do have employee in that department.
+
+-- Now we will look for nested query
+-- Question: Find stores who's sales where better than the average sales accorss all stores
+-- 1. Total sales for each store
+-- 2. average sales for all stores
+-- compare 1 & 2
+
+--SELECT store_name, SUM(price) AS total_sales
+--FROM sales
+--GROUP BY (store_name); --1. task completed 
+
+--now ave to do average on above query records only
+
+--SELECT AVG(total_sales) AS avg_total_sales
+--FROM (SELECT store_name, SUM(price) AS total_sales
+--	  FROM sales
+--     GROUP BY (store_name)) AS x
+      
+ --moving to third part comparing 1 & 2
+ 
+--SELECT *
+-- 	FROM () AS alias1
+-- 	JOIN () AS alias2
+-- 		ON alias1.''>alias2.''
+
+-- so this would be the structure of comaprison
+ 
+ SELECT *
+ FROM (SELECT store_name, SUM(price) AS total_sales
+	  FROM sales
+      GROUP BY (store_name)) alias1
+ JOIN (SELECT AVG(total_sales) AS avg_total_sales
+FROM (SELECT store_name, SUM(price) AS total_sales
+	  FROM sales
+      GROUP BY (store_name)) AS x) AS alias2
+ ON alias1.total_sales > alias2.avg_total_sales
+
+
+--We can use subquery on
+ -- SELECT
+ -- FROM
+ -- WHERE
+ -- HAVING
+ 
+ -- Using subquery on SELECT clause
+ 
+ -- Question: Fetch all the employee details and add remarks to those employees who earns more than average pay
+ 
+-- SELECT *,(CASE WHEN salary > (SELECT AVG(salary) FROM employee)
+--         THEN 'Higher than Average'
+--         ELSE NULL
+--         END) AS remarks FROM employee; --after > there is subquery
+
+
+-- Now it is not a good practice to put a subquery inside SELECT clause we can do this same by using JOIN as well
+
+--SELECT *, (CASE WHEN salary > avg_sal.sal
+--          THEN 'HIGHER SALARY'
+--          ELSE NULL
+--          END) AS remarks
+--FROM employee
+--CROSS JOIN (SELECT AVG(salary) sal FROM employee) AS avg_sal;
+
+
+-- HAVING
+--Question: Find the stores who have sold more units than the average units sold by all stores.
+
+--SELECT store_name, SUM(quantity_sold) FROM sales
+--GROUP BY (store_name);  --this will give sum of quantity store by store
+
+-- SELECT AVG(quantity_sold) FROM sales; --this will give figure of average quantity_sold and now we will embed this into above query of SUM
+
+--SELECT store_name, SUM(quantity_sold) AS sum_qauntity FROM sales
+--GROUP BY (store_name)
+--HAVING SUM(quantity_sold) > (SELECT AVG(quantity_sold) FROM sales);
+
+
+--SQL commands which allows Subquery
+-- INSERT
+-- UPDATE
+-- DELETE
+
+-- Let's start with INSERT
+--Question: Insert data to employee history table. Make sure not to insert duplicate records
+
+--SELECT * from employee_history;
+
+--INSERT INTO employee_history
+--SELECT e.emp_id, e.emp_name,e.salary, d.dept_name, d.location
+--FROM employee e
+--JOIN department d
+--ON d.dept_name = e.dept_name
+--WHERE NOT EXISTS (SELECT *
+--                 FROM employee_history eh
+--                 WHERE eh.emp_id = e.emp_id);
+
+--UPDATE
+--Question: Give 10% increament to all employees in BAnglore on max salary earned by an emp in each dept. Only consider employees in emp_history table
+
+--UPDATE employee e
+--SET salary = (SELECT MAX(salary) + (MAX(salary*0.10) 
+--              FROM employee_history eh
+--             WHERE eh.dept_name = e.dept_name)
+--WHERE e.dept_name IN (SELECT dept_name FROM department
+--WHERE location LIKE 'Banglore')
+--AND e.emp_id IN (SELECT emp_id FROM employee_history);
+
+
+
+--DELETE 
+--Question: Delete all departments who don' have any employee
+--DELETE FROM department
+--WHERE dept_name IN (
+--					SELECT dept_name FROM department d
+--					WHERE NOT EXISTS
+--					(SELECT * FROM employee e
+--                    WHERE e.dept_name = d.dept_name));
+
+
+
+
+
+
+
